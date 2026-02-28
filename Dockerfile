@@ -3,10 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY . /app
 
-# Устанавливаем poetry и зависимости из pyproject.toml
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-interaction --no-ansi
+# Устанавливаем зависимости напрямую
+RUN pip install --no-cache-dir fastapi uvicorn
 
 EXPOSE 8000
 
