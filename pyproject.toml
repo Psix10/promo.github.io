@@ -1,0 +1,22 @@
+[project]
+name = "appsella"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Sudovtsev.M",email = "mishanya.oo@ya.ru"}
+]
+license = {text = "00.1"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi (>=0.129.0,<0.130.0)",
+    "uvicorn[standard] (>=0.41.0,<0.42.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "sqlalchemy (>=2.0.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
