@@ -11,10 +11,8 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from sqlalchemy import Column, DateTime, Integer, String, create_engine, text
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.exc import IntegrityError
-
+from sqlalchemy import text
+from .models import UsedPhone, SessionLocal, Base, engine  # используем models.py
 
 # =====================
 # ENV
@@ -24,6 +22,10 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# =====================
+# SEGMENTS
+# =====================
 
 class Segment(NamedTuple):
     id: int
@@ -44,7 +46,7 @@ SEGMENTS_BASE = [
     Segment(7, "Приведи друга: -1000₽ вам и другу", "fixed", 1000, 16),
 ]
 
-# wheel_id = 1 — страница index1
+# wheel_id = 1 — страница index1 (Сусана)
 SEGMENTS_WHEEL_1 = [
     Segment(101, "оформление бровей в подарок (при ламинировании ресниц)", "gift", None, 1),
     Segment(102, "-40% на ламинирование бровей", "percent", 40, 1),
@@ -55,7 +57,7 @@ SEGMENTS_WHEEL_1 = [
     Segment(107, "-15% на три посещения подряд", "percent", 15, 1),
 ]
 
-# wheel_id = 2 — страница index2
+# wheel_id = 2 — страница index2 (Ангелина)
 SEGMENTS_WHEEL_2 = [
     Segment(201, "-10% на наращивание ресниц", "percent", 10, 1),
     Segment(202, "-10% на наращивание ресниц", "percent", 10, 1),
@@ -63,7 +65,7 @@ SEGMENTS_WHEEL_2 = [
     Segment(204, "-20% на наращивание ресниц", "percent", 20, 1),
     Segment(205, "-30% на наращивание ресниц", "percent", 30, 1),
     Segment(206, "оформление бровей в подарок при наращивании ресниц", "gift", None, 1),
-    Segment(207, "оформление бровей в подарок при наращивании ресниц", "gift", None, 1),
+    Segment(207, "оформление бровей в подарок", "gift", None, 1),
     Segment(208, "приди с подругой и получите -15% каждая на наращивание ресниц", "percent", 15, 1),
 ]
 
@@ -75,31 +77,8 @@ SEGMENT_SETS: dict[int, list[Segment]] = {
 }
 
 # =====================
-# DATABASE (SQLite)
+# DB MIGRATION HELPERS
 # =====================
-
-DATABASE_URL = "sqlite:///./beauty.db"
-
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
-SessionLocal = sessionmaker(bind=engine)
-
-Base = declarative_base()
-
-
-class UsedPhone(Base):
-    __tablename__ = "used_phones"
-
-    phone = Column(String, primary_key=True, index=True)
-    promo_code = Column(String)
-    segment_id = Column(Integer, nullable=True)
-    segment_label = Column(String, nullable=True)
-    wheel_id = Column(Integer, nullable=True)
-    created_at = Column(DateTime, nullable=True)
-
-
-Base.metadata.create_all(bind=engine)
 
 def _ensure_schema():
     """
@@ -118,8 +97,9 @@ def _ensure_schema():
         if "created_at" not in cols:
             conn.execute(text("ALTER TABLE used_phones ADD COLUMN created_at DATETIME"))
 
-_ensure_schema()
 
+Base.metadata.create_all(bind=engine)
+_ensure_schema()
 
 # =====================
 # FASTAPI
@@ -144,7 +124,6 @@ class SpinResponse(BaseModel):
     segment: SegmentOut
     promo_code: str
 
-
 # =====================
 # LOGIC
 # =====================
@@ -160,23 +139,32 @@ def choose_segment(segments: list[Segment]) -> Segment:
     total_weight = sum(s.weight for s in segments)
     rnd = random.uniform(0, total_weight)
     cumulative = 0
-    
+
     for s in segments:
         cumulative += s.weight
         if rnd <= cumulative:
             return s
-    
+
     return segments[-1]
 
 
-def generate_promo_code(segment_label: str) -> str:
+def generate_promo_code(segment_id: int, wheel_id: int) -> str:
     """
-    Формат: FEB2026-S<ID>-AB12CD34
+    Формат:
+      SUS-FEB2026-S<id>-XXXXXXXX для колеса 1 (Сусана)
+      ANG-FEB2026-S<id>-XXXXXXXX для колеса 2 (Ангелина)
+      FEB2026-S<id>-XXXXXXXX для базового
     """
-    prefix = "FEB2026"
+    if wheel_id == 1:
+        prefix = "SUS-FEB2026"
+    elif wheel_id == 2:
+        prefix = "ANG-FEB2026"
+    else:
+        prefix = "FEB2026"
+
     alphabet = string.ascii_uppercase + string.digits
     part1 = "".join(random.choice(alphabet) for _ in range(8))
-    return f"{prefix}-S{segment_label}-{part1}"
+    return f"{prefix}-S{segment_id}-{part1}"
 
 
 def normalize_phone(phone: str) -> str:
@@ -187,29 +175,42 @@ def normalize_phone(phone: str) -> str:
 
     return digits
 
+# =====================
+# TELEGRAM
+# =====================
 
-async def send_to_telegram(phone: str, promo_code: str):
+async def send_to_telegram(phone: str, promo_code: str, wheel_id: int):
+    print("DBG: send_to_telegram called", phone, promo_code, wheel_id)
+
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram disabled")
+        print("Telegram disabled", TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
         return
+
+    # Имя в зависимости от колеса
+    if wheel_id == 1:
+        name = "Сусана"
+    elif wheel_id == 2:
+        name = "Ангелина"
+    else:
+        name = "Админ"
 
     text = (
         "🎯 Новая заявка с рулетки\n\n"
         f"Номер телефона: +{phone}\n"
-        f"Промокод: {promo_code}"
+        f"Промокод {name}: {promo_code}"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        try:
-            await client.post(url, json={
-                "chat_id": TELEGRAM_CHAT_ID,
-                "text": text
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(url, json={
+                "chat_id": int(TELEGRAM_CHAT_ID),
+                "text": text,
             })
-        except Exception as e:
-            print("Telegram error:", e)
-
+        print("DBG: telegram status", resp.status_code, resp.text)
+    except Exception as e:
+        print("Telegram error:", e)
 
 # =====================
 # API
@@ -230,34 +231,57 @@ async def spin(req: SpinRequest):
             detail="Введите телефон в формате России (+7 900 000 00 00)"
         )
 
+    wheel_id = req.wheel_id if req.wheel_id is not None else DEFAULT_WHEEL_ID
+
     db = SessionLocal()
 
-    segments = get_segments_for_wheel(req.wheel_id)
-    segment = choose_segment(segments)
-    promo_code = generate_promo_code(str(segment.id))
-    
     try:
+        # 1) Проверяем, есть ли уже запись по этому телефону и этому колесу
+        existing = (
+            db.query(UsedPhone)
+            .filter(UsedPhone.phone == phone, UsedPhone.wheel_id == wheel_id)
+            .first()
+        )
+        if existing:
+            # Ничего не крутим и не шлём в телеграм — просто возвращаем то же окно
+            segment = Segment(
+                id=existing.segment_id,
+                label=existing.segment_label,
+                discount_type="percent",   # если не хранишь тип/значение — можно заглушку
+                discount_value=None,
+                weight=1,
+            )
+            return SpinResponse(
+                segment=SegmentOut(
+                    id=segment.id,
+                    label=segment.label,
+                    discount_type=segment.discount_type,
+                    discount_value=segment.discount_value,
+                ),
+                promo_code=existing.promo_code,
+            )
+
+        # 2) Первый раз по этому номеру и этому колесу — крутим колесо
+        segments = get_segments_for_wheel(wheel_id)
+        segment = choose_segment(segments)
+        promo_code = generate_promo_code(segment.id, wheel_id)
+
         db.add(
             UsedPhone(
                 phone=phone,
                 promo_code=promo_code,
                 segment_id=segment.id,
                 segment_label=segment.label,
-                wheel_id=req.wheel_id if req.wheel_id is not None else DEFAULT_WHEEL_ID,
+                wheel_id=wheel_id,
                 created_at=datetime.now(timezone.utc),
             )
         )
         db.commit()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="Для этого номера промокод уже был выдан"
-        )
     finally:
         db.close()
 
-    await send_to_telegram(phone, promo_code)
+    # Телеграм только при первом спине
+    await send_to_telegram(phone, promo_code, wheel_id)
 
     return SpinResponse(
         segment=SegmentOut(
@@ -268,6 +292,9 @@ async def spin(req: SpinRequest):
         ),
         promo_code=promo_code,
     )
+
+
+
 
 @app.get("/api/segments", response_model=list[SegmentOut])
 async def segments(wheel_id: int | None = None):
@@ -289,6 +316,7 @@ async def segments(wheel_id: int | None = None):
 @app.get("/")
 async def root():
     return FileResponse("static/index.html")
+
 
 @app.on_event("startup")
 async def _startup():

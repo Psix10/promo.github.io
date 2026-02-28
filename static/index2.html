@@ -40,6 +40,7 @@
       padding: 30px 22px 24px;
       text-align: center;
       box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+      --wheel-size: 300px;
     }
 
     .wheel-row {
@@ -111,8 +112,7 @@
     }
 
     @keyframes shake {
-      0%,
-      100% {
+      0%, 100% {
         transform: translateX(0);
       }
       25% {
@@ -137,10 +137,6 @@
       opacity: 1;
     }
 
-    .card {
-      --wheel-size: 300px;
-    }
-
     #wheelContainer {
       margin: 20px 0 10px;
       position: relative;
@@ -152,16 +148,33 @@
       flex-shrink: 0;
     }
 
-    #wheelRotor {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform-origin: 50% 50%;
+    #wheel {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+      display: block;
+      filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.1));
       will-change: transform;
       backface-visibility: hidden;
       transform: translateZ(0);
+    }
+
+    #pointer {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 26px solid #dd1212;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+      z-index: 10;
     }
 
     .legend {
@@ -185,14 +198,14 @@
 
     .legend-list {
       list-style: none;
-      padding-left: 0;
-      margin: 0 0 4px;
+      padding-left: 4px;
+      margin-bottom: 13px;
     }
 
     .legend-list li {
       position: relative;
       padding-left: 12px;
-      margin-bottom: 3px;
+      margin-bottom: 5px;
     }
 
     .legend-list li::before {
@@ -203,32 +216,6 @@
       color: #f1d98b;
       opacity: 0.95;
       font-weight: 700;
-    }
-
-    #wheel {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      height: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 50%;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-      display: block;
-      filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.1));
-    }
-
-    #pointer {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-top: 26px solid #dd1212;
-      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-      z-index: 10;
     }
 
     .btn {
@@ -381,15 +368,12 @@
     @media (max-width: 480px) {
       .card {
         padding: 24px 18px 20px;
+        --wheel-size: min(78vw, 300px);
       }
 
       .wheel-row {
         flex-direction: column;
         align-items: center;
-      }
-
-      .card {
-        --wheel-size: min(78vw, 300px);
       }
 
       h1 {
@@ -426,7 +410,6 @@
   <div class="card">
     <div class="badge">Premium Beauty</div>
     <h1>Испытайте удачу</h1>
-    
 
     <div class="input-group">
       <input id="phone" type="tel" placeholder="+7 900 000 00 00" maxlength="18" />
@@ -439,12 +422,13 @@
         <canvas id="wheel" width="300" height="300"></canvas>
       </div>
       <div class="legend">
-        <p class="legend-lead">🎡 Испытай удачу и получи:</p>
+        <div class="legend-title">Призы</div>
         <ul class="legend-list">
           <li>-10% на наращивание ресниц</li>
           <li>-20% на наращивание ресниц</li>
           <li>-30% на наращивание ресниц</li>
           <li>Оформление бровей в подарок при наращивании ресниц</li>
+          <li>Оформление бровей в подарок</li>
           <li>-15% каждой, если приходите с подругой</li>
         </ul>
         <p class="legend-desc" style="margin-top:8px;">Скидка распространяется на одну процедуру.</p>
@@ -469,7 +453,13 @@
 
   <script>
     const WHEEL_ID = 2;
+    const WHEEL_SIZE = 300;
+    const WHEEL_START_ANGLE = -Math.PI / 2;
+    const WHEEL_ROTATIONS = 6;
+    const SPIN_DURATION_MS = 4500;
+
     let segments = [];
+
     function splitLabel(text, maxLen = 18) {
       const words = String(text || "").split(" ");
       const lines = [];
@@ -485,16 +475,7 @@
         }
       }
       if (current) lines.push(current);
-      return lines;
-    }
-    function toShortLabel2(full) {
-      if (!full) return "";
-      if (full.startsWith("-10%") && full.includes("ресниц")) return "-10% ресницы";
-      if (full.startsWith("-20%") && full.includes("ресниц")) return "-20% ресницы";
-      if (full.startsWith("-30%") && full.includes("ресниц")) return "-30% ресницы";
-      if (full.includes("в подарок") && full.includes("бров")) return "Брови в подарок";
-      if (full.includes("подругой") && full.includes("-15%")) return "-15% с подругой";
-      return full;
+      return lines.slice(0, 3);
     }
 
     const SHORT_LABELS_2 = {
@@ -503,7 +484,7 @@
       203: "-20% Наращивание",
       204: "-20% Наращивание",
       205: "-30% Наращивание",
-      206: "🎁 Брови в подарок",
+      206: "🎁 Ресницы + бровья",
       207: "🎁 Брови в подарок",
       208: "-15% С подругой",
     };
@@ -515,8 +496,11 @@
 
     const colors = ["#d4af37", "#c9a227", "#e5c96b", "#b8962e", "#f1d98b", "#a67c00"];
     const canvas = document.getElementById("wheel");
+    canvas.width = WHEEL_SIZE;
+    canvas.height = WHEEL_SIZE;
     const ctx = canvas.getContext("2d");
     const rad = canvas.width / 2;
+    const wheelRadius = rad - 3;
     const TAU = Math.PI * 2;
 
     let idToIndex = {};
@@ -526,31 +510,44 @@
     }
 
     function drawWheel() {
+      if (!segments.length) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const arc = Math.PI * 2 / segments.length;
+      const arc = TAU / segments.length;
+
       segments.forEach((s, i) => {
-        const start = i * arc;
+        const start = WHEEL_START_ANGLE + i * arc;
+        const end = start + arc;
+        const mid = start + arc / 2;
+
         ctx.beginPath();
         ctx.moveTo(rad, rad);
-        ctx.arc(rad, rad, rad, start, start + arc);
+        ctx.arc(rad, rad, wheelRadius, start, end);
+        ctx.closePath();
         ctx.fillStyle = colors[i % colors.length];
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        const mid = start + arc / 2;
-        const textRadius = rad * 0.6;
-        const x = rad + Math.cos(mid) * textRadius;
-        const y = rad + Math.sin(mid) * textRadius;
+        const lines = splitLabel((s.label || "").trim());
+        const textRadius = rad * 0.64;
 
         ctx.save();
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 11px sans-serif";
+        ctx.translate(rad, rad);
+        ctx.rotate(mid);
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        const text = (s.label || "").trim();
-        ctx.fillText(text, x, y);
+        ctx.fillStyle = "#111";
+        ctx.font = "bold 10px sans-serif";
+
+        const lineHeight = 12;
+        const startY = -((lines.length - 1) * lineHeight) / 2;
+        lines.forEach((line, idx) => {
+          ctx.fillText(line, textRadius, startY + idx * lineHeight);
+        });
+
         ctx.restore();
       });
     }
@@ -577,7 +574,6 @@
     let currentRotation = 0;
     let isSpinning = false;
 
-    // Форматирование номера телефона
     document.getElementById("phone").addEventListener("input", function (e) {
       let value = e.target.value.replace(/\D/g, "");
 
@@ -602,10 +598,7 @@
 
     function validatePhone(phone) {
       const digits = phone.replace(/\D/g, "");
-      if (digits.length !== 11 || !digits.startsWith("7")) {
-        return false;
-      }
-      return true;
+      return digits.length === 11 && digits.startsWith("7");
     }
 
     function spinToId(id, promoCode) {
@@ -619,21 +612,20 @@
         spinBtn.textContent = "Крутить рулетку";
         return;
       }
+
       const arc = TAU / segments.length;
-      const segmentCenter = index * arc + arc / 2;
+      const segmentCenter = WHEEL_START_ANGLE + index * arc + arc / 2;
       const pointerAngle = -Math.PI / 2;
-      const spins = 6;
-      const duration = 4500;
       const start = performance.now();
       const startRot = currentRotation;
 
       const currentNorm = ((startRot % TAU) + TAU) % TAU;
       let target = pointerAngle - segmentCenter;
       target = ((target % TAU) + TAU) % TAU;
-      const diff = spins * TAU + (target - currentNorm);
+      const diff = WHEEL_ROTATIONS * TAU + (target - currentNorm);
 
       function animate(now) {
-        const t = Math.min((now - start) / duration, 1);
+        const t = Math.min((now - start) / SPIN_DURATION_MS, 1);
         const ease = 1 - Math.pow(1 - t, 4);
         const angle = startRot + diff * ease;
         canvas.style.transform = `rotate(${angle}rad)`;
@@ -670,7 +662,7 @@
     function copyPromo() {
       const text = document.getElementById("promoText").textContent;
       const btn = event.currentTarget;
-      
+
       navigator.clipboard.writeText(text)
         .then(() => {
           const original = btn.textContent;
@@ -780,6 +772,5 @@
       }
     });
   </script>
-
 </body>
 </html>
