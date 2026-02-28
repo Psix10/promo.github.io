@@ -78,7 +78,6 @@
 
     .input-group {
       position: relative;
-      margin-bottom: 8px;
     }
 
     input {
@@ -235,7 +234,6 @@
     }
 
     .btn {
-      margin-top: 18px;
       padding: 12px 26px;
       border: none;
       border-radius: 999px;
@@ -426,14 +424,14 @@
 </head>
 <body>
   <div class="card">
-    <div class="badge">Premium Beauty</div>
-    <h1>Испытайте удачу</h1>
+    <div class="badge">Susanna brows</div>
+    <h1>Забири свой подарок 🎁</h1>
 
     <div class="input-group">
       <input id="phone" type="tel" placeholder="+7 900 000 00 00" maxlength="18" />
       <div id="error" role="alert" aria-live="polite"></div>
     </div>
-
+    <button id="spinBtn" class="btn" aria-label="Крутить рулетку">Крутить рулетку</button>
     <div class="wheel-row">
       <div id="wheelContainer">
         <div id="pointer"></div>
@@ -451,12 +449,11 @@
           <li>-20% тебе и подруге</li>
           <li>-15% на три посещения подряд</li>
         </ul>
-        <p class="legend-desc" style="margin-top: 8px;">Скидка распространяется на одну процедуру.</p>
-        <p class="legend-desc">Скидка действует до конца марта.</p>
+        <p class="legend-desc" style="margin-top: 8px;">Скидка распространяется на одну процедуру и действует до конца марта.</p>
       </div>
     </div>
 
-    <button id="spinBtn" class="btn" aria-label="Крутить рулетку">Крутить рулетку</button>
+    
   </div>
 
   <div class="modal" id="modal" role="dialog" aria-labelledby="prizeTitle" aria-modal="true">
@@ -473,7 +470,7 @@
 
   <script>
     const WHEEL_ID = 1;
-    const WHEEL_SIZE = 300;
+    const WHEEL_SIZE = 500;
     const WHEEL_START_ANGLE = -Math.PI / 2;
     const WHEEL_ROTATIONS = 6;
     const SPIN_DURATION_MS = 4500;
@@ -503,11 +500,11 @@
     }
 
     const SHORT_LABELS_1 = {
-      101: '🎁 Брови в подарок',
-      102: '-40% Ламинирование бровей',
-      103: '-40% Ламинирование ресниц',
-      104: '-30% Оформление бровей',
-      105: '-20% Тебе и подруге',
+      101: '🎁 оформление бровей в подарок',
+      102: '-40% на ламинирование бровей',
+      103: '-40% на ламинирование ресниц',
+      104: '-30% на оформление бровей',
+      105: '-20% тебе и подруге',
       106: '-15% на 3 визита',
       107: '-15% на 3 визита'
     };
@@ -517,7 +514,7 @@
       label: SHORT_LABELS_1[id]
     }));
 
-    const colors = ['#d4af37', '#c9a227', '#e5c96b', '#b8962e', '#f1d98b', '#a67c00'];
+    const colors = ["#e5c96b", "#c9a227", "#e5c96b", "#c9a227", "#e5c96b", "#c9a227", "#e5c96b"];
     const wheelRotor = document.getElementById('wheelRotor');
     const canvas = document.getElementById('wheel');
     canvas.width = WHEEL_SIZE;
@@ -560,7 +557,7 @@
         ctx.stroke();
 
         const lines = splitLabel((segment.label || '').trim());
-        const textRadius = rad * 0.64;
+        const textRadius = rad * 0.56;
 
         ctx.save();
         ctx.translate(rad, rad);
@@ -568,9 +565,9 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#111';
-        ctx.font = 'bold 10px sans-serif';
+        ctx.font = '600 18px Georgia';
 
-        const lineHeight = 12;
+        const lineHeight = 22;
         const startY = -((lines.length - 1) * lineHeight) / 2;
 
         lines.forEach((line, lineIndex) => {

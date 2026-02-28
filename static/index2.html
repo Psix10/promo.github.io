@@ -79,7 +79,6 @@
 
     .input-group {
       position: relative;
-      margin-bottom: 8px;
     }
 
     input {
@@ -219,7 +218,6 @@
     }
 
     .btn {
-      margin-top: 18px;
       padding: 12px 26px;
       border: none;
       border-radius: 999px;
@@ -408,14 +406,14 @@
 <body>
 
   <div class="card">
-    <div class="badge">Premium Beauty</div>
-    <h1>Испытайте удачу</h1>
+    <div class="badge">Angi lash</div>
+    <h1>Забири свой подарок 🎁</h1>
 
     <div class="input-group">
       <input id="phone" type="tel" placeholder="+7 900 000 00 00" maxlength="18" />
       <div id="error" role="alert" aria-live="polite"></div>
     </div>
-
+    <button id="spinBtn" class="btn" aria-label="Крутить рулетку">Крутить рулетку</button>
     <div class="wheel-row">
       <div id="wheelContainer">
         <div id="pointer"></div>
@@ -424,19 +422,15 @@
       <div class="legend">
         <div class="legend-title">Призы</div>
         <ul class="legend-list">
-          <li>-10% на наращивание ресниц</li>
-          <li>-20% на наращивание ресниц</li>
+          <li>-10% на наращивание/ламинирование ресниц</li>
+          <li>-20% на наращивание/ламинирование ресниц</li>
           <li>-30% на наращивание ресниц</li>
           <li>Оформление бровей в подарок при наращивании ресниц</li>
-          <li>Оформление бровей в подарок</li>
           <li>-15% каждой, если приходите с подругой</li>
         </ul>
-        <p class="legend-desc" style="margin-top:8px;">Скидка распространяется на одну процедуру.</p>
-        <p class="legend-desc">Предложение действует до конца марта.</p>
+        <p class="legend-desc" style="margin-top:8px;">Скидка распространяется на одну процедуру и действует до конца марта.</p>
       </div>
     </div>
-
-    <button id="spinBtn" class="btn" aria-label="Крутить рулетку">Крутить рулетку</button>
   </div>
 
   <div class="modal" id="modal" role="dialog" aria-labelledby="prizeTitle" aria-modal="true">
@@ -479,14 +473,13 @@
     }
 
     const SHORT_LABELS_2 = {
-      201: "-10% Наращивание",
-      202: "-10% Наращивание",
-      203: "-20% Наращивание",
-      204: "-20% Наращивание",
-      205: "-30% Наращивание",
-      206: "🎁 Ресницы + бровья",
-      207: "🎁 Брови в подарок",
-      208: "-15% С подругой",
+      201: "-10% на наращивание",
+      202: "-10% на ламинирование",
+      203: "-20% на наращивание",
+      204: "-20% на ламинирование",
+      205: "-30% на наращивание",
+      206: "🎁 оформление бровей в падарок",
+      207: "-15% тебе и подруге",
     };
 
     const fallbackSegments = Object.keys(SHORT_LABELS_2).map(id => ({
@@ -494,7 +487,7 @@
       label: SHORT_LABELS_2[id],
     }));
 
-    const colors = ["#d4af37", "#c9a227", "#e5c96b", "#b8962e", "#f1d98b", "#a67c00"];
+    const colors = ["#e5c96b", "#c9a227", "#e5c96b", "#c9a227", "#e5c96b", "#c9a227", "#e5c96b"];
     const canvas = document.getElementById("wheel");
     canvas.width = WHEEL_SIZE;
     canvas.height = WHEEL_SIZE;
@@ -502,6 +495,17 @@
     const rad = canvas.width / 2;
     const wheelRadius = rad - 3;
     const TAU = Math.PI * 2;
+
+    (function fixHiDPI() {
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr === 1) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width  = rect.width  * dpr;
+      canvas.height = rect.height * dpr;
+
+      ctx.scale(dpr, dpr);
+    })();
 
     let idToIndex = {};
     function rebuildIndex() {
@@ -532,17 +536,17 @@
         ctx.stroke();
 
         const lines = splitLabel((s.label || "").trim());
-        const textRadius = rad * 0.64;
+        const textRadius = rad * 0.57;
 
         ctx.save();
         ctx.translate(rad, rad);
         ctx.rotate(mid);
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "#111";
-        ctx.font = "bold 10px sans-serif";
+        ctx.fillStyle = "#3a260f";
+        ctx.font = "600 11px Georgia";
 
-        const lineHeight = 12;
+        const lineHeight = 10;
         const startY = -((lines.length - 1) * lineHeight) / 2;
         lines.forEach((line, idx) => {
           ctx.fillText(line, textRadius, startY + idx * lineHeight);
