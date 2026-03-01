@@ -48,24 +48,24 @@ SEGMENTS_BASE = [
 
 # wheel_id = 1 — страница index1 (Сусана)
 SEGMENTS_WHEEL_1 = [
-    Segment(101, "оформление бровей в подарок (при ламинировании ресниц)", "gift", None, 1),
-    Segment(102, "-40% на ламинирование бровей", "percent", 40, 1),
-    Segment(103, "-40% на ламинирование ресниц", "percent", 40, 1),
-    Segment(104, "-30% на оформление бровей", "percent", 30, 1),
-    Segment(105, "-20% тебе и другу", "percent", 20, 1),
-    Segment(106, "-15% на три посещения подряд", "percent", 15, 1),
-    Segment(107, "-15% на три посещения подряд", "percent", 15, 1),
+    Segment(101, "оформление бровей в подарок (при ламинировании ресниц)", "gift", None, 8),
+    Segment(102, "-40% на ламинирование бровей", "percent", 40, 3),
+    Segment(103, "-40% на ламинирование ресниц", "percent", 40, 3),
+    Segment(104, "-30% на оформление бровей", "percent", 30, 5),
+    Segment(105, "-20% тебе и другу", "percent", 20, 6),
+    Segment(106, "-15% на три посещения подряд", "percent", 15, 7),
+    Segment(107, "-15% на три посещения подряд", "percent", 15, 7),
 ]
 
 # wheel_id = 2 — страница index2 (Ангелина)
 SEGMENTS_WHEEL_2 = [
-    Segment(201, "-10% на наращивание ресниц", "percent", 10, 1),
-    Segment(205, "-10% на ламинирование ресниц", "percent", 10, 1),
-    Segment(203, "-20% на наращивание ресниц", "percent", 20, 1),
-    Segment(204, "-20% на ламинирование ресниц", "percent", 20, 1),
-    Segment(202, "-30% на наращивание ресниц", "percent", 30, 1),
-    Segment(206, "оформление бровей в подарок при наращивании ресниц", "gift", None, 1),
-    Segment(207, "приди с подругой и получите -15% каждая на наращивание ресниц", "percent", 15, 1),
+    Segment(201, "-10% на наращивание ресниц", "percent", 10, 8),
+    Segment(205, "-10% на ламинирование ресниц", "percent", 10, 8),
+    Segment(203, "-20% на наращивание ресниц", "percent", 20, 5),
+    Segment(204, "-20% на ламинирование ресниц", "percent", 20, 6),
+    Segment(202, "-15% на наращивание ресниц", "percent", 30, 5),
+    Segment(206, "оформление бровей в подарок при наращивании ресниц", "gift", None, 7),
+    Segment(207, "приди с подругой и получите -15% каждая на наращивание ресниц", "percent", 15, 6),
 ]
 
 DEFAULT_WHEEL_ID = 0
@@ -179,10 +179,8 @@ def normalize_phone(phone: str) -> str:
 # =====================
 
 async def send_to_telegram(phone: str, promo_code: str, wheel_id: int):
-    print("DBG: send_to_telegram called", phone, promo_code, wheel_id)
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram disabled", TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
         return
 
     # Имя в зависимости от колеса
@@ -207,9 +205,9 @@ async def send_to_telegram(phone: str, promo_code: str, wheel_id: int):
                 "chat_id": int(TELEGRAM_CHAT_ID),
                 "text": text,
             })
-        print("DBG: telegram status", resp.status_code, resp.text)
+        
     except Exception as e:
-        print("Telegram error:", e)
+        raise e
 
 # =====================
 # API

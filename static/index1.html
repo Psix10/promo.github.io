@@ -425,7 +425,7 @@
 <body>
   <div class="card">
     <div class="badge">Susanna brows</div>
-    <h1>Забири свой подарок 🎁</h1>
+    <h1>Забери свой подарок 🎁</h1>
 
     <div class="input-group">
       <input id="phone" type="tel" placeholder="+7 900 000 00 00" maxlength="18" />
@@ -523,6 +523,17 @@
     const rad = canvas.width / 2;
     const wheelRadius = rad - 3;
     const TAU = Math.PI * 2;
+
+    (function fixHiDPI() {
+      const dpr = window.devicePixelRatio || 1;
+      if (dpr === 1) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width  = rect.width  * dpr;
+      canvas.height = rect.height * dpr;
+
+      ctx.scale(dpr, dpr);
+    })();
 
     let idToIndex = {};
     function rebuildIndex() {
