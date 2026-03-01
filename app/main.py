@@ -178,12 +178,10 @@ def normalize_phone(phone: str) -> str:
 # TELEGRAM
 # =====================
 
-async def send_to_telegram(phone: str, promo_code: str, wheel_id: int):
-
+async def send_to_telegram(phone: str, promo_code: str, wheel_id: int, segment: Segment):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
 
-    # Имя в зависимости от колеса
     if wheel_id == 1:
         name = "Сусана"
     elif wheel_id == 2:
@@ -194,20 +192,22 @@ async def send_to_telegram(phone: str, promo_code: str, wheel_id: int):
     text = (
         "🎯 Новая заявка с рулетки\n\n"
         f"Номер телефона: +{phone}\n"
-        f"Промокод {name}: {promo_code}"
+        f"Мастер: {name}\n"
+        f"Приз: {segment.label}\n"
+        f"Промокод: {promo_code}"
     )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.post(url, json={
+            await client.post(url, json={
                 "chat_id": int(TELEGRAM_CHAT_ID),
                 "text": text,
             })
-        
     except Exception as e:
         raise e
+
 
 # =====================
 # API
