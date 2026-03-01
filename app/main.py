@@ -278,7 +278,7 @@ async def spin(req: SpinRequest):
         db.close()
 
     # Телеграм только при первом спине
-    await send_to_telegram(phone, promo_code, wheel_id)
+    await send_to_telegram(phone, promo_code, wheel_id, segment)
 
     return SpinResponse(
         segment=SegmentOut(
