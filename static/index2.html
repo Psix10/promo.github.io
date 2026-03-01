@@ -501,9 +501,11 @@
       const dpr = window.devicePixelRatio || 1;
       if (dpr === 1) return;
 
-      const rect = canvas.getBoundingClientRect();
-      canvas.width  = rect.width  * dpr;
-      canvas.height = rect.height * dpr;
+      const logicalSize = WHEEL_SIZE;        // 300
+      canvas.width  = logicalSize * dpr;
+      canvas.height = logicalSize * dpr;
+      canvas.style.width  = logicalSize + "px";
+      canvas.style.height = logicalSize + "px";
 
       ctx.scale(dpr, dpr);
     })();
