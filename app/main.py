@@ -151,16 +151,16 @@ def choose_segment(segments: list[Segment]) -> Segment:
 def generate_promo_code(segment_id: int, wheel_id: int) -> str:
     """
     Формат:
-      SUS-FEB2026-S<id>-XXXXXXXX для колеса 1 (Сусана)
-      ANG-FEB2026-S<id>-XXXXXXXX для колеса 2 (Ангелина)
-      FEB2026-S<id>-XXXXXXXX для базового
+      SUS-MAR2026-S<id>-XXXXXXXX для колеса 1 (Сусана)
+      ANG-MAR2026-S<id>-XXXXXXXX для колеса 2 (Ангелина)
+      MAR2026-S<id>-XXXXXXXX для базового
     """
     if wheel_id == 1:
-        prefix = "SUS-FEB2026"
+        prefix = "SUS-MAR2026"
     elif wheel_id == 2:
-        prefix = "ANG-FEB2026"
+        prefix = "ANG-MAR2026"
     else:
-        prefix = "FEB2026"
+        prefix = "MAR2026"
 
     alphabet = string.ascii_uppercase + string.digits
     part1 = "".join(random.choice(alphabet) for _ in range(8))
